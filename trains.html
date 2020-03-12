@@ -385,7 +385,7 @@ train %&gt;%
   pull(avg_inc) %&gt;%
   quantile(c(0.025, 0.975))</code></pre>
 <pre><code>##     2.5%    97.5% 
-## 115046.6 152306.4</code></pre>
+## 114453.4 153154.4</code></pre>
 <pre class="r"><code># Note the pattern above, and as discussed in class. First, we calculate
 # something, like mean income, just using standard R. Then, some where in the
 # middle of that pipe, we need to do the bootsrap, which almost always requires
@@ -421,8 +421,38 @@ train %&gt;%
 <div id="tasks-for-today" class="section level1">
 <h1>Tasks for Today</h1>
 <ol style="list-style-type: decimal">
-<li><p>Now that we know the difference in mean income between treated and control in this sample, we want to get a confidence interval for that difference. If we had sampled commuters other than the ones that we did sample, the difference would be different. How different might it be? Are these results consistent with the claim, made in the article, that treatment was randomly assigned?</p></li>
-<li><p>The focus of the article is on the change in attitude. In our data, this is the variable att_chg. (Note that we have scaled this somewhat differently than the article did.) Recall that a positive attitude change means that a person has become more conservative in their opinions about immigration.</p></li>
+<li>Now that we know the difference in mean income between treated and control in this sample, we want to get a confidence interval for that difference. If we had sampled commuters other than the ones that we did sample, the difference would be different. How different might it be? Are these results consistent with the claim, made in the article, that treatment was randomly assigned?</li>
+</ol>
+<pre class="r"><code>train %&gt;%
+# we need to do a bootstrap early so that it will take the sample before all the group by.
+# we want everyone in the sample, so we chose 115 people as the sample size
+  rep_sample_n(size = 115, replace = TRUE, reps = 1000) %&gt;%
+  group_by(replicate,treatment) %&gt;% 
+  summarise(avg_inc = mean(income)) %&gt;% 
+  pivot_wider(names_from = treatment, values_from = avg_inc) %&gt;% 
+  mutate(Difference = Treated - Control) %&gt;% 
+  select(replicate, Difference, everything()) %&gt;% 
+  pull(Difference) %&gt;%
+  quantile(c(0.025, 0.975))</code></pre>
+<pre><code>##      2.5%     97.5% 
+## -43918.43  10945.93</code></pre>
+<pre class="r"><code># This means that we can say with 95% certainty that the average income disparities between Boston commuters falls within this range.</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>The focus of the article is on the change in attitude. In our data, this is the variable att_chg. (Note that we have scaled this somewhat differently than the article did.) Recall that a positive attitude change means that a person has become more conservative in their opinions about immigration.</li>
+</ol>
+<pre class="r"><code>train %&gt;% 
+  rep_sample_n(size = 115, replace = TRUE, reps = 1000) %&gt;%
+  group_by(replicate, treatment) %&gt;% 
+  summarise(attitude = mean(att_chg)) %&gt;% 
+  pivot_wider(names_from = treatment, values_from = attitude) %&gt;% 
+  mutate(Difference = Treated - Control) %&gt;%
+  select(replicate, Difference, everything()) %&gt;% 
+  pull(Difference) %&gt;%
+  quantile(c(0.025, 0.975))</code></pre>
+<pre><code>##      2.5%     97.5% 
+## 0.2850631 1.3575822</code></pre>
+<p>```</p>
+<ol start="3" style="list-style-type: decimal">
 <li><p>What is the difference in att_chg between the Treated and Control?</p></li>
 <li><p>What is a 99% confidence intervals for that difference?</p></li>
 <li><p>How do you describe that confidence interval? How would a “frequentist” describe that interval?</p></li>

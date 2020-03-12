@@ -65,11 +65,40 @@ train %>%
 
 1) Now that we know the difference in mean income between treated and control in this sample, we want to get a confidence interval for that difference. If we had sampled commuters other than the ones that we did sample, the difference would be different. How different might it be? Are these results consistent with the claim, made in the article, that treatment was randomly assigned?
 
+```{r}
+train %>%
+# we need to do a bootstrap early so that it will take the sample before all the group by.
+# we want everyone in the sample, so we chose 115 people as the sample size
+  rep_sample_n(size = 115, replace = TRUE, reps = 1000) %>%
+  group_by(replicate,treatment) %>% 
+  summarise(avg_inc = mean(income)) %>% 
+  pivot_wider(names_from = treatment, values_from = avg_inc) %>% 
+  mutate(Difference = Treated - Control) %>% 
+  select(replicate, Difference, everything()) %>% 
+  pull(Difference) %>%
+  quantile(c(0.025, 0.975))
+
+# This means that we can say with 95% certainty that the average income disparities between Boston commuters falls within this range.
+```
 
 
 
 2) The focus of the article is on the change in attitude. In our data, this is the variable att_chg. (Note that we have scaled this somewhat differently than the article did.) Recall that a positive attitude change means that a person has become more conservative in their opinions about immigration.
 
+```{r}
+train %>% 
+  rep_sample_n(size = 115, replace = TRUE, reps = 1000) %>%
+  group_by(replicate, treatment) %>% 
+  summarise(attitude = mean(att_chg)) %>% 
+  pivot_wider(names_from = treatment, values_from = attitude) %>% 
+  mutate(Difference = Treated - Control) %>%
+  select(replicate, Difference, everything()) %>% 
+  pull(Difference) %>%
+  quantile(c(0.025, 0.975))
+  
+```
+
+```
 
 
 3) What is the difference in att_chg between the Treated and Control?
